@@ -36,7 +36,7 @@ describe('Valied Search pramter', () => {
     test('search by city', async () => {
 
         const response = await api
-            .get('/api/search?Destination=Brazil')
+            .get('/api/search?city=Ankundingland')
             .expect(200)
             .expect('Content-Type', /json/);
 
@@ -50,7 +50,7 @@ describe('Valied Search pramter', () => {
 
     test('search by priceRange', async () => {
         const response = await api
-            .get('/api/search?price_start=680 price_end=690')
+            .get('/api/search?start_price=680&end_price=690')
             .expect(200)
             .expect('Content-Type', /json/);
 
@@ -64,7 +64,7 @@ describe('Valied Search pramter', () => {
 
     test('search by dateRange', async () => {
         const response = await api
-            .get('/api/search?date_start=27-04-2020 date_end=30-04-2020')
+            .get('/api/search?start_date=2021-04-12T20:38:02.640Z')
             .expect(200)
             .expect('Content-Type', /json/);
         expect(response.body.data.length).toBeGreaterThanOrEqual(1);
@@ -79,43 +79,57 @@ describe('Valied Search pramter', () => {
 
 
 describe('InValied Search Pramter', () => {
-    
+
     describe('Test invalid date string', () => {
 
         test('Test start_date = aa-bb-cccc & end_date = 2-04-2020', async () => {
             const date1 = 'aa-bb-cccc';
-            const date2 = '2-04-2020';
+            const date2 = '2020-04-2';
 
             const response = await api
                 .get(`/api/search?start_date=${date1}&end_date=${date2}`)
                 .expect(400);
 
             expect(response.body.error).toBeDefined();
-            expect(response.body.error).toBe(errors.badDate);
+            expect(response.body.error).toBe(`(${date1}) ${errors.badDate}`);
         });
-        test('Test start_date = 2-04-2020 & end_date = 77-04-2020', async () => {
-            const date1 = '2-04-2020';
-            const date2 = '77-04-2020';
+        test('Test start_date = 2020-02-30& end_date = 2020-04-77', async () => {
+            const date1 = '2020-02-30';
+            const date2 = '2020-04-77';
 
             const response = await api
                 .get(`/api/search?start_date=${date1}&end_date=${date2}`)
                 .expect(400);
 
             expect(response.body.error).toBeDefined();
-            expect(response.body.error).toBe(errors.badDate);
+            expect(response.body.error).toBe(`(${date1}) ${errors.badDate}`);
         });
+        test('Test start_date = 2020-02-15 & end_date = 2020-04-77', async () => {
+            const date1 = '2020-02-15';
+            const date2 = '2020-04-77';
+
+            const response = await api
+                .get(`/api/search?start_date=${date1}&end_date=${date2}`)
+                .expect(400);
+
+            expect(response.body.error).toBeDefined();
+            expect(response.body.error).toBe(`(${date2}) ${errors.badDate}`);
+        });
+
+
+
     });
 
     test('wrong date range', async () => {
-        const date1 = '2-04-2020';
-        const date2 = '1-03-2020';
+        const date1 = '2020-04-02';
+        const date2 = '2020-03-01';
 
         const response = await api
             .get(`/api/search?start_date=${date1}&end_date=${date2}`)
             .expect(400);
 
         expect(response.body.error).toBeDefined();
-        expect(response.body.error).toBe(errors.badDate);
+        expect(response.body.error).toBe(errors.invalidDateRange);
     });
 
 

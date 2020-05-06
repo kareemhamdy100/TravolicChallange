@@ -1,14 +1,12 @@
 function requestLogger(request, response, next) {
-    console.log('Method:', request.method);
-    console.log('Host:', request.hostname);
-    console.log('Body:', request.body);
-    console.log('======');
+    if (process.env.NODE_ENV === 'dev') {
+        console.log('Method:', request.method);
+        console.log('Host:', request.hostname);
+        console.log('Body:', request.body);
+        console.log('======');
+    }
     next();
 }
-
-
-
-
 
 function unknownEndpoint(request, response) {
     response.status(404).json({
@@ -18,12 +16,12 @@ function unknownEndpoint(request, response) {
 
 
 function errorHandler(error, request, response, next) {
-    console.error(`[!] ${error.name}: ${error.message}`);
-
+    if (process.env.NODE_ENV === 'dev') {
+        console.error(`[!] ${error.name}: ${error.message}`);
+    }
     if (error.name === 'ValidationError') {
         return response.status(400).json({ error: error.message });
     }
-
     next(error);
 }
 
