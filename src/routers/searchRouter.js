@@ -220,7 +220,7 @@ function attachDateInterval(req, res, next) {
         searchOptions.date_interval_se = intervalObj;
 
     } else {
-        req.searchFlags.isDateIntervalse = false;
+        req.searchFlags.isDateIntervalse = false
     }
     next();
 }
