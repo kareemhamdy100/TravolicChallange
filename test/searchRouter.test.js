@@ -18,7 +18,7 @@ beforeEach(() => {
 describe('Valied Search pramter', () => {
     let expObject = {};
     beforeEach(() => {
-        expObject = { name: 'fugit eius ut' };
+        expObject = { name: 'fugit eius utaaa' };
     });
     test('search by name', async () => {
         const response = await api
