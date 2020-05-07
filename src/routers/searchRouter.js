@@ -2,8 +2,8 @@ const searchRouter = require('express').Router();
 const validator = require('validator');
 
 const errorMessages = require('../utils/errorMessages');
-/* 
-    function from reducer. Store get data from given API and send it to reducer 
+/*
+    function from reducer. Store get data from given API and send it to reducer
     to produce final result as required.
     req.finalResult is promise retrun from reducer.
   */
@@ -12,28 +12,28 @@ const fetchDataAfterFliter = require('../dataStore/reducer');
 
 /*
     search router prepare searchOptions & sortOptions
-    then request data from reducer 
+    then request data from reducer
     reducer return promise when reslove return the final result;
  */
 
-searchRouter.get("/",
+searchRouter.get('/',
     setupOtionsObject,
     attachName,
     attachCity,
     attachPriceRange,
     attachDateInterval,
     getDataAfterFilter,
-    async (req, res, next) => {
+    async (req, res) => {
         try {
             const finalRestult = await req.finalRestult;
             res.json({ data: finalRestult });
         } catch (err) {
-            res.status(500).json({ error: errorMessages.errorFromApiRequest })
+            res.status(500).json({ error: errorMessages.errorFromApiRequest });
         }
     });
 
-/* 
-    a middleware that check reqest prameter 
+/*
+    a middleware that check reqest prameter
     create (searchFlags object )
     make request object have req.searchFlags = searchFlags & req.searchOptions = {}
  */
@@ -45,7 +45,7 @@ function setupOtionsObject(req, res, next) {
             isPriceRange: boolean, if true range filed will be added (Object {start , end }) to optios
             isDateIntervalse: boolean, if true intrval filed will be added (Object {start , end }) to searchOptions
        */
-    }
+    };
     //TODO check if not Null and check body Data
     const prams = req.query;
     /*setup searchFlags as commented */
@@ -55,7 +55,7 @@ function setupOtionsObject(req, res, next) {
     searchFlags.isDateIntervalse = typeof prams.start_date !== 'undefined';
 
     /*
-        sort is ascending order by defualt  
+        sort is ascending order by defualt
         if sort_type = desc it will become descending order
         sort_by  should equal name or price otherwise data will become unsorted
     */
@@ -76,9 +76,9 @@ function setupOtionsObject(req, res, next) {
     next();
 }
 
-/*  
+/*
     if name is't empty String then it's valied
-    then attach it to searchOptions 
+    then attach it to searchOptions
  */
 function attachName(req, res, next) {
     const prams = req.query;
@@ -91,10 +91,10 @@ function attachName(req, res, next) {
         }
     }
     next();
-};
+}
 /*
     if city is't empty String then it's valied
-    then attach it to searchOptions 
+    then attach it to searchOptions
  */
 function attachCity(req, res, next) {
     const prams = req.query;
@@ -107,12 +107,12 @@ function attachCity(req, res, next) {
         }
     }
     next();
-};
+}
 /*
     check if two Strings are numbers and
     start less than or equal end
     then return { error = null , rangeObj }
-    otherWise 
+    otherWise
     return { error }
  */
 
@@ -138,10 +138,10 @@ function validateRange(start, end) {
             }
         };
     }
-    error.name = "ValidationError";
+    error.name = 'ValidationError';
     return { error };
 }
-/* 
+/*
     Checks if should search with price_range,
     then validate the start_price and end_price
     then attch it to searchOptions
@@ -157,46 +157,46 @@ function attachPriceRange(req, res, next) {
         }
         // valiedate price_range
         const { error, rangeObj } = validateRange(startPrice, endPrice);
-        if (error != null) { next(error); }
+        if (error !== null) { next(error); }
 
         searchOptions.price_range = rangeObj;
     } else {
         req.searchFlags.isPriceRange = false;
     }
     next();
-};
+}
 
 /*
     check if two Strings are valied date and
     start less than or equal end
-    return {error = null , intervalObj} 
-    otherWise  
-    return { Error } 
- 
+    return {error = null , intervalObj}
+    otherWise
+    return { Error }
+
     date should be yyyy-mm-dd format
  */
 function validateInterval(startDate, endDate) {
     let error = null;
     if (!validator.isISO8601(startDate, { strict: true })) {
         error = new Error(`(${startDate}) ${errorMessages.badDate}`);
-    } else if (!validator.isISO8601(endDate)) {
+    } else if (!validator.isISO8601(endDate, { strict: true })) {
         error = new Error(`(${endDate}) ${errorMessages.badDate}`);
     } else if (validator.isBefore(endDate, startDate)) {
         error = new Error(errorMessages.invalidDateRange);
     } else {
         /* valied dates and range*/
         return {
-            erorr: null,
+            error: null,
             intervalObj: {
                 start: Math.floor(new Date(startDate).getTime() / 1000),
                 end: Math.floor(new Date(endDate).getTime() / 1000)
             }
         };
     }
-    error.name = "ValidationError";
+    error.name = 'ValidationError';
     return { error };
 }
-/* 
+/*
     Checks if should search with date_interval_se ,
     then validate the start_date and end_date
     then attch it to searchOptions
@@ -211,9 +211,11 @@ function attachDateInterval(req, res, next) {
         if (typeof prams.end_date !== 'undefined' && prams.end_date !== '') {
             endDate = prams.end_date;
         }
-        //check strings if valied dates 
+        //check strings if valied dates
         const { error, intervalObj } = validateInterval(startDate, endDate);
-        if (error != null) { next(error); }
+        if (error !== null) {
+            return next(error);
+        }
         /*intervalObj have start and end with unix timestamp format */
         searchOptions.date_interval_se = intervalObj;
 
@@ -221,24 +223,24 @@ function attachDateInterval(req, res, next) {
         req.searchFlags.isDateIntervalse = false;
     }
     next();
-};
+}
 
 
 
 /*
     This middleware send searchOptions, sortOptions to reducer to get required data.
- 
+
     searchOptions is object with keys and values
-    we interset to search about 
-    keys should be equals to the data keys 
-    expect for Ranges 
+    we interset to search about
+    keys should be equals to the data keys
+    expect for Ranges
     key = <key>_range or <key>_range_se
-    se here means that the data have 2 keys  
-    ends with "start" and "end" with same name 
+    se here means that the data have 2 keys
+    ends with "start" and "end" with same name
     like  "date_start", "date_end"
     <key>_range used to search  for ranges with  normal dataTyps String, integer,..etc
     <key>_interval used to  search for ranges with dates and times only also support "_se".
-    searchOptions will be someThing like this 
+    searchOptions will be someThing like this
     {
         name :"itaque ut laborum",
         city : "South Dan",
@@ -251,15 +253,15 @@ function attachDateInterval(req, res, next) {
             end: 18116544544
         }
     }
-    sortObject 
+    sortObject
     {
         sort_by:<field_name>,
-        sort_type: ture: for ascen ordering, false for desc ordering 
+        sort_type: ture: for ascen ordering, false for desc ordering
     }
  */
 function getDataAfterFilter(req, res, next) {
     req.finalRestult = fetchDataAfterFliter(req.searchOptions, req.sortOptions);
     next();
-};
+}
 
 module.exports = searchRouter;

@@ -18,8 +18,8 @@ beforeEach(() => {
 describe('Valied Search pramter', () => {
     let expObject = {};
     beforeEach(() => {
-        expObject = { name: "fugit eius ut" };
-    })
+        expObject = { name: 'fugit eius ut' };
+    });
     test('search by name', async () => {
         const response = await api
             .get('/api/search?name=fugit eius ut')
@@ -74,7 +74,7 @@ describe('Valied Search pramter', () => {
             ])
         );
     });
-})
+});
 
 
 

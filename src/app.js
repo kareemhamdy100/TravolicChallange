@@ -2,7 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-const config = require('./utils/config');
 const middlewares = require('./utils/middlewares');
 const searchRouter = require('./routers/searchRouter');
 const app = express();

@@ -1,0 +1,33 @@
+version: 2.1
+jobs: 
+  build: 
+    working_directory: ~/search-task
+    docker: 
+      - image: circleci/node:10.16.3 
+    steps: 
+      - checkout 
+
+      - run:
+            name: update-npm
+            command: 'sudo npm install -g npm@latest'
+      - run:
+            name: install eslint
+            command: 'sudo npm install -g eslint'  
+      - restore_cache: 
+            key: dependency-cache-{{ checksum "package-lock.json" }}
+      - run:
+            name: install-npm-wee
+            command: 'npm install'
+      - save_cache: 
+          key: dependency-cache-{{ checksum "package-lock.json" }}
+          paths:
+            - ./node_modules
+      - run:
+            name: Linting
+            command: |
+                eslint .      
+      - run: 
+            name: test
+            command: npm test
+     
+    
