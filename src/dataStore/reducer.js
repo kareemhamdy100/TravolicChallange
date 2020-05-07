@@ -3,9 +3,19 @@
 const getStoreData = require('./storeBase');
 
 
-function sortData(sortOptions, data) {
-    //TODO
-    return sortedData;
+function sortData(data, sortOptions) {
+
+    if (Object.keys(sortOptions).length === 0) return data;
+    data.sort((a, b) => {
+        if (a[sortOptions.sort_by] > b[sortOptions.sort_by]) {
+            return sortOptions.sort_type ? 1 : -1;
+        } else if (a[sortOptions.sort_by] < b[sortOptions.sort_by]) {
+            return sortOptions.sort_type ? -1 : 1;
+        } else {
+            return 0;
+        }
+    });
+    return data;
 }
 
 /* searchOptions is an object with search paramters 
@@ -25,7 +35,7 @@ function sortData(sortOptions, data) {
     this object validated before reach here.
 */
 
-function filterData(searchOptions, data) {
+function filterData(data, searchOptions) {
 
     const result = data.filter((hotelObj) => {
 
@@ -105,9 +115,15 @@ function filterData(searchOptions, data) {
     sort it
     Return filtered sorted data
 */
-module.exports = function getData(searchOptions) {
-    const data = getStoreData();
-    const result = filterData(searchOptions, data);
-    return result;
+module.exports = async function getData(searchOptions, sortOptions) {
+    if (Object.keys(searchOptions).length === 0) return [];
+    try {
+        const data = await getStoreData();
+        let result = filterData(data, searchOptions);
+        result = sortData(result, sortOptions);
+        return result;
+    } catch (err) {
+       throw err;
+    };
 };
 

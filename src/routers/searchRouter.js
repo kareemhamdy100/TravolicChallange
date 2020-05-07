@@ -2,18 +2,34 @@ const searchRouter = require('express').Router();
 const validator = require('validator');
 
 const errorMessages = require('../utils/errorMessages');
+/* 
+    function from reducer. Store get data from given API and send it to reducer 
+    to produce final result as required.
+    req.finalResult is promise retrun from reducer.
+  */
 const fetchDataAfterFliter = require('../dataStore/reducer');
+
+
+/*
+    search router prepare searchOptions & sortOptions
+    then request data from reducer 
+    reducer return promise when reslove return the final result;
+ */
 
 searchRouter.get("/",
     setupOtionsObject,
-    validateName,
-    validateCity,
-    validatePriceRange,
-    validateDateRange,
+    attachName,
+    attachCity,
+    attachPriceRange,
+    attachDateInterval,
     getDataAfterFilter,
-    (req, res, next) => {
-
-        res.json({ data: req.finalRestult });
+    async (req, res, next) => {
+        try {
+            const finalRestult = await req.finalRestult;
+            res.json({ data: finalRestult });
+        } catch (err) {
+            res.status(500).json({ error: errorMessages.errorFromApiRequest })
+        }
     });
 
 /* 
@@ -38,17 +54,33 @@ function setupOtionsObject(req, res, next) {
     searchFlags.isPriceRange = typeof prams.start_price !== 'undefined';
     searchFlags.isDateIntervalse = typeof prams.start_date !== 'undefined';
 
+    /*
+        sort is ascending order by defualt  
+        if sort_type = desc it will become descending order
+        sort_by  should equal name or price otherwise data will become unsorted
+    */
+    const sortOptions = {};
+    if (prams.sort_by && prams.sort_by === 'name' || prams.sort_by === 'price') {
+        sortOptions.sort_by = prams.sort_by;
+        sortOptions.sort_type = true;
+        if (prams.sort_type) {
+            if (prams.sort_type === 'desc') {
+                sortOptions.sort_type = false;
+            }
+        }
+    }
     /*attach searchOptions and searchFlags to req object and pass to validate */
     req.searchFlags = searchFlags;
     req.searchOptions = {};
+    req.sortOptions = sortOptions;
     next();
 }
 
 /*  
     if name is't empty String then it's valied
-    then add it to searchOptions 
+    then attach it to searchOptions 
  */
-function validateName(req, res, next) {
+function attachName(req, res, next) {
     const prams = req.query;
     const searchOptions = req.searchOptions;
     if (req.searchFlags.isName) {
@@ -62,9 +94,9 @@ function validateName(req, res, next) {
 };
 /*
     if city is't empty String then it's valied
-    then add it to searchOptions 
+    then attach it to searchOptions 
  */
-function validateCity(req, res, next) {
+function attachCity(req, res, next) {
     const prams = req.query;
     const searchOptions = req.searchOptions;
     if (req.searchFlags.isCity) {
@@ -77,29 +109,44 @@ function validateCity(req, res, next) {
     next();
 };
 /*
-    check if two prices are numbers and
-    start <= end
-    then add to searchOptions
-    otherWise response with  Error 
-    if valied return null else return with ErrorMessage
+    check if two Strings are numbers and
+    start less than or equal end
+    then return { error = null , rangeObj }
+    otherWise 
+    return { error }
  */
 
-function isValidPrices(startPrice, endPrice) {
+function validateRange(start, end) {
     let error = null;
-
-    if (!validator.isNumeric(startPrice)) {
-        error = new Error(`(${startPrice}) ${errorMessages.priceNotNumber}`);
-    } else if (!validator.isNumeric(endPrice)) {
-        error = new Error(`(${endPrice}) ${errorMessages.priceNotNumber}`);
-    } else if (startPrice > endPrice) {
+    const startFloat = validator.toFloat(start);
+    const endFloat = validator.toFloat(end);
+    if (!validator.isNumeric(start)) {
+        error = new Error(`(${start}) ${errorMessages.priceNotNumber}`);
+    }
+    else if (!validator.isNumeric(end)) {
+        error = new Error(`(${end}) ${errorMessages.priceNotNumber}`);
+    }
+    else if (startFloat > endFloat) {
         error = new Error(errorMessages.invalidPriceRange);
-    } else {
-        return null;
+    }
+    else {
+        return {
+            error: null,
+            rangeObj: {
+                start: startFloat,
+                end: endFloat
+            }
+        };
     }
     error.name = "ValidationError";
-    return error;
+    return { error };
 }
-function validatePriceRange(req, res, next) {
+/* 
+    Checks if should search with price_range,
+    then validate the start_price and end_price
+    then attch it to searchOptions
+*/
+function attachPriceRange(req, res, next) {
     const prams = req.query;
     const searchOptions = req.searchOptions;
     if (req.searchFlags.isPriceRange && prams.start_price !== '') {
@@ -109,30 +156,27 @@ function validatePriceRange(req, res, next) {
             endPrice = prams.end_price;
         }
         // valiedate price_range
-        const error = isValidPrices(startPrice, endPrice);
-        if (error != null) {
-            next(error);
-        } else {
-            searchOptions.price_range = {
-                start: startPrice,
-                end: endPrice
-            }
-        }
+        const { error, rangeObj } = validateRange(startPrice, endPrice);
+        if (error != null) { next(error); }
+
+        searchOptions.price_range = rangeObj;
+    } else {
+        req.searchFlags.isPriceRange = false;
     }
     next();
 };
 
 /*
-    check if two dates are valied Dates and
-    start <= end
-    then add to searchOptions
-    otherWise response with  Error 
-
+    check if two Strings are valied date and
+    start less than or equal end
+    return {error = null , intervalObj} 
+    otherWise  
+    return { Error } 
+ 
     date should be yyyy-mm-dd format
  */
-function isValidDates(startDate, endDate) {
+function validateInterval(startDate, endDate) {
     let error = null;
-
     if (!validator.isISO8601(startDate, { strict: true })) {
         error = new Error(`(${startDate}) ${errorMessages.badDate}`);
     } else if (!validator.isISO8601(endDate)) {
@@ -140,13 +184,24 @@ function isValidDates(startDate, endDate) {
     } else if (validator.isBefore(endDate, startDate)) {
         error = new Error(errorMessages.invalidDateRange);
     } else {
-        return null;
+        /* valied dates and range*/
+        return {
+            erorr: null,
+            intervalObj: {
+                start: Math.floor(new Date(startDate).getTime() / 1000),
+                end: Math.floor(new Date(endDate).getTime() / 1000)
+            }
+        };
     }
     error.name = "ValidationError";
-    return error;
+    return { error };
 }
-
-function validateDateRange(req, res, next) {
+/* 
+    Checks if should search with date_interval_se ,
+    then validate the start_date and end_date
+    then attch it to searchOptions
+*/
+function attachDateInterval(req, res, next) {
     const prams = req.query;
     const searchOptions = req.searchOptions;
 
@@ -157,16 +212,13 @@ function validateDateRange(req, res, next) {
             endDate = prams.end_date;
         }
         //check strings if valied dates 
-        const error = isValidDates(startDate, endDate);
-        if (error != null) {
-            next(error);
-        }
+        const { error, intervalObj } = validateInterval(startDate, endDate);
+        if (error != null) { next(error); }
+        /*intervalObj have start and end with unix timestamp format */
+        searchOptions.date_interval_se = intervalObj;
 
-        searchOptions.date_interval_se = {
-            start: Math.floor(new Date(startDate).getTime() / 1000),
-            end: Math.floor(new Date(endDate).getTime() / 1000)
-        };
-
+    } else {
+        req.searchFlags.isDateIntervalse = false;
     }
     next();
 };
@@ -175,7 +227,7 @@ function validateDateRange(req, res, next) {
 
 /*
     This middleware send searchOptions, sortOptions to reducer to get required data.
-
+ 
     searchOptions is object with keys and values
     we interset to search about 
     keys should be equals to the data keys 
@@ -199,14 +251,14 @@ function validateDateRange(req, res, next) {
             end: 18116544544
         }
     }
- 
+    sortObject 
+    {
+        sort_by:<field_name>,
+        sort_type: ture: for ascen ordering, false for desc ordering 
+    }
  */
 function getDataAfterFilter(req, res, next) {
-    if (Object.keys(req.searchOptions).length !== 0) {
-        req.finalRestult = fetchDataAfterFliter(req.searchOptions);
-    } else {
-        req.finalRestult = [];
-    }
+    req.finalRestult = fetchDataAfterFliter(req.searchOptions, req.sortOptions);
     next();
 };
 

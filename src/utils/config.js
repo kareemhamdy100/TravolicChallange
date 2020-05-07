@@ -1,10 +1,9 @@
 require('dotenv').config();
 
 let PORT = process.env.PORT;
-
-    console.log( process.env.NODE_ENV);
-
+let API_URL = process.env.API_URL;
 
 module.exports = {
-    PORT
+    PORT,
+    API_URL
 };
