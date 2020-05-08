@@ -7,7 +7,7 @@
   -  Hotel Name
   -  Destination [City]
   -  Price range [ex: $100:$200]
-  -   Date range [ex: 2020-10-1:2020-10-15]
+  -  Date range [ex: 2020-10-1:2020-10-15]
 
   and allow sorting by:  
   - Hotel Name
@@ -60,7 +60,7 @@ and the allowed pramters is
 
 
 ## Code structure
-**root**:
+**root**:  
   - index.js (create server and use the Express app from src)
   - test (dir contains tests for search router)
   - **src**:
@@ -78,7 +78,7 @@ storeBase.js is where we fetch data from original src (in our case (given API_EN
 reducer.js get all data storeBase have and then filter it and sort it depend on the searchOptions, sortOptions
 received from search router 
 
-**how filter work**:
+**how filter work**:  
 filter function independent from the src data schema that's why it will look 
 a quiet bit complicated but it's worth because if the schema changed it will never change
 it depends on the searchOptions have the same keys as the src data schema have
