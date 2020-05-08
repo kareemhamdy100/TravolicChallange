@@ -82,7 +82,7 @@ describe('InValied Search Pramter', () => {
 
     describe('Test invalid date string', () => {
 
-        test('Test start_date = aa-bb-cccc & end_date = 2-04-2020', async () => {
+        test('Test start_date = aa-bb-cccc & end_date = 2020-04-2', async () => {
             const date1 = 'aa-bb-cccc';
             const date2 = '2020-04-2';
 

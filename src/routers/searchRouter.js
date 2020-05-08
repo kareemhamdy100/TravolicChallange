@@ -236,7 +236,7 @@ function attachDateInterval(req, res, next) {
     expect for Ranges
     key = <key>_range or <key>_range_se
     se here means that the data have 2 keys
-    ends with "start" and "end" with same name
+    end with "_start" and "_end" with same name
     like  "date_start", "date_end"
     <key>_range used to search  for ranges with  normal dataTyps String, integer,..etc
     <key>_interval used to  search for ranges with dates and times only also support "_se".
