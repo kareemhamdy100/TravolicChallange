@@ -37,8 +37,8 @@ This search API work with url pramter
 and the allowed pramters is 
 - name (string && not ' ') return data with name === queryprams.name.
 - city (string && not ' ') return data with city === queryprams.city.
-- (price range) return data data with price in between [start, end].
-    - (start) start_price  ( Number &&  less than end_price)
+- (price range) return data with price in between [start, end].
+    - (start) start_price ( Number &&  less than end_price)
     - (end)   end_price    ( Number ) in case ' ' or undifine search done with start_price only
 - (date range) return data data with [date_start , date_end] in intersect with [start, end].
     - (start) start_date ( Date && (YYYY-MM-DD) && less than end_date )
