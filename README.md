@@ -85,9 +85,9 @@ it depends on the searchOptions have the same keys as the src data schema have
 and it's allowed to search by 
 - value like { name, city }
 - range with one key represents one value like [price]  
-by sending in searchOption this object [key]_range:{ start , end };
+by sending in searchOption this object [key] { type:range: value:{ start , end } };
 - Search by range in two keys represent a range in the data like <date_start, date_end>  
-by sending in searchOption this object [key]_range_se:{ start , end };
+by sending in searchOption this object [key] { type:range_se, value:{ start , end } };
 
     **NOTE**: 'se' used for search with a range in data have range.  
     data have a range that's mean data have two keys represent  
