@@ -87,7 +87,7 @@ function attachName(req, res, next) {
         if (prams.name === '') {
             req.searchFlags.isName = false;
         } else {
-            searchOptions.name = prams.name;
+            searchOptions.name = { type:'', value: prams.name };
         }
     }
     next();
@@ -103,7 +103,7 @@ function attachCity(req, res, next) {
         if (prams.city === '') {
             req.searchFlags.isCity = false;
         } else {
-            searchOptions.city = prams.city;
+            searchOptions.city = { type: '',value: prams.city };
         }
     }
     next();
@@ -159,7 +159,7 @@ function attachPriceRange(req, res, next) {
         const { error, rangeObj } = validateRange(startPrice, endPrice);
         if (error !== null) { next(error); }
 
-        searchOptions.price_range = rangeObj;
+        searchOptions.price = { type: 'range', value :rangeObj };
     } else {
         req.searchFlags.isPriceRange = false;
     }
@@ -217,7 +217,7 @@ function attachDateInterval(req, res, next) {
             return next(error);
         }
         /*intervalObj have start and end with unix timestamp format */
-        searchOptions.date_interval_se = intervalObj;
+        searchOptions.date = { type: 'interval_se', value :intervalObj };
 
     } else {
         req.searchFlags.isDateIntervalse = false;
@@ -233,24 +233,29 @@ function attachDateInterval(req, res, next) {
     searchOptions is object with keys and values
     we interset to search about
     keys should be equals to the data keys
-    expect for Ranges
-    key = <key>_range or <key>_range_se
-    se here means that the data have 2 keys
+    and type could be '' || 'range' ||  'range_se' || 'interval'|| 'interval_se'
+    'se' here means that the data have 2 keys
     end with "_start" and "_end" with same name
     like  "date_start", "date_end"
-    <key>_range used to search  for ranges with  normal dataTyps String, integer,..etc
-    <key>_interval used to  search for ranges with dates and times only also support "_se".
+    'range' used to search  for ranges with  normal dataTyps String, integer,..etc
+    'interval' used to  search for ranges with dates and times only also support "_se".
     searchOptions will be someThing like this
     {
-        name :"itaque ut laborum",
-        city : "South Dan",
-        price_range : {
-            start : 200,
-            end :  250
+        name :{type:'' , value: "itaque ut laborum"},
+        city : {type:'', value: "South Dan"},
+        price : {
+            type:'range',
+            value:{
+                start : 200,
+                end :  250
+            }
         },
-        date_interval_se : {
+        date: {
+        type: 'interval_se',
+        value:{
             start: 1880061321,
             end: 18116544544
+            }
         }
     }
     sortObject

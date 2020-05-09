@@ -24,16 +24,22 @@ function sortData(data, sortOptions) {
 
 /* searchOptions is an object with search paramters
     something like this
-    {
-        name: "abc",
-        city: "aaa",
-        price_range: {
-            start: 50,
-            end: 60
+   {
+        name :{type:'' , value: "itaque ut laborum"},
+        city : {type:'', value: "South Dan"},
+        price : {
+            type:'range',
+            value:{
+                start : 200,
+                end :  250
+            }
         },
-        date_interval_se:{
-            start: 18897897996,  timeStamp
-            end : 44456466666
+        date: {
+        type: 'interval_se',
+        value:{
+            start: 1880061321,
+            end: 18116544544
+            }
         }
     }
     this object validated before reach here.
@@ -42,65 +48,55 @@ function sortData(data, sortOptions) {
 function filterData(data, searchOptions) {
 
     const result = data.filter((hotelObj) => {
-
         for (const key of Object.keys(searchOptions)) {
-            const keyContent = key.split('_');
-
-            switch (keyContent[1]) {
+            switch (searchOptions[key].type) {
             /* any range will work find excpet for time and dates uses interval */
             case 'range':
-                /* 'se' with range here not used with this version of schema
-                             it means that the schema have paramter with
-                             <name>_start
-                             <name>_end and you search with tow values too.
-                             Like data_start, date_end
-                        */
-                if (keyContent[2] === 'se') {
-                    const hotelPram_start = hotelObj[`${keyContent[0]}_start`];
-                    const hotelPram_end = hotelObj[`${keyContent[0]}_end`];
-                    const searchStart = searchOptions[key].start;
-                    const searchEnd = searchOptions[key].end;
-
-                    if (searchStart > hotelPram_end || searchEnd < hotelPram_start) {
-                        return false;
-                    }
-                } else {
-                    if (!(searchOptions[key].start <= hotelObj[keyContent[0]])
-                            || !(hotelObj[keyContent[0]] <= searchOptions[key].end)) {
-                        return false;
-                    }
+                if (!(searchOptions[key].value.start <= hotelObj[key])
+                            || !(hotelObj[key] <= searchOptions[key].value.end)) {
+                    return false;
                 }
-
+                break;
+                /* 'se' with range here not used with this version of schema
+                    it means that the schema have paramter with
+                    <name>_start
+                    <name>_end and you search with tow values too.
+                    Like data_start, date_end
+                */
+            case 'range_se':
+                if (searchOptions[key].value.start > hotelObj[`${key}_end`] ||
+                 searchOptions[key].value.end < hotelObj[`${key}_start`]) {
+                    return false;
+                }
                 break;
                 /* works with times and dates */
-            case 'interval':
-                /* 'se' it means that the schema have paramter with
-                                 <name>_start
-                                 <name>_end and you search with two values too.
-                                 Like data_start, date_end
-                        */
-                if (keyContent[2] === 'se') {
-                    // convert to unix TimeStamp
-                    const hotelPram_start = Math.floor(new Date(hotelObj[`${keyContent[0]}_start`]).getTime() / 1000);
-                    const hotelPram_end = Math.floor(new Date(hotelObj[`${keyContent[0]}_end`]).getTime() / 1000);
-                    const searchStart = searchOptions[key].start;
-                    const searchEnd = searchOptions[key].end;
-                    if (searchStart > hotelPram_end
-                            || searchEnd < hotelPram_start) {
-                        return false;
-                    }
-
-                } else {
-                    const hotelObjTimeValue = new Date(hotelObj[keyContent[0]]) / 1000;
-                    if (!(searchOptions[key].start <= hotelObjTimeValue)
-                            || !(hotelObjTimeValue <= searchOptions[key].end)) {
-                        return false;
-                    }
+            case 'interval':{
+                const hotelObjTimeValue = new Date(hotelObj[key]) / 1000;
+                if (!(searchOptions[key].value.start <= hotelObjTimeValue)
+                        || !(hotelObjTimeValue <= searchOptions[key].end)) {
+                    return false;
                 }
-
                 break;
+            }
+            /* 'se' it means that the schema have paramter with
+                <name>_start
+                <name>_end and you search with two values too.
+                Like data_start, date_end
+            */
+            case 'interval_se': {
+                // convert to unix TimeStamp
+                const hotelPram_start = Math.floor(new Date(hotelObj[`${key}_start`]).getTime() / 1000);
+                const hotelPram_end = Math.floor(new Date(hotelObj[`${key}_end`]).getTime() / 1000);
+                const searchStart = searchOptions[key].value.start;
+                const searchEnd = searchOptions[key].value.end;
+                if (searchStart > hotelPram_end
+                            || searchEnd < hotelPram_start) {
+                    return false;
+                }
+                break;
+            }
             default:
-                if (searchOptions[key] !== hotelObj[key]) {
+                if (searchOptions[key].value !== hotelObj[key]) {
                     return false;
                 }
                 break;
